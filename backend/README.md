@@ -50,9 +50,15 @@ Environment variables:
 ```
    - Nếu token hết hạn/không hợp lệ, server trả về `{"type":"error","code":"session_expired","message":"..."}` và không cho vào phòng.
    - Nếu hợp lệ: `{"type":"joined","userId","displayName","fullName","roomId"}`. `displayName` (biệt danh) được lấy từ DB theo token, client không tự khai để tránh giả mạo.
-3. Gửi tin nhắn: `{"type":"send_message","content":"Xin chào!"}`
+3. Gửi tin nhắn nhóm: `{"type":"send_message","content":"Xin chào!"}`
 4. Báo đang gõ: `{"type":"typing","isTyping":true}`
-5. Server broadcast: `{"type":"message",...}`, `{"type":"typing",...}`, `{"type":"presence","count":N}`
+5. Gửi tin nhắn riêng 1-1: `{"type":"dm_send","toUserId":"<userId người nhận>","content":"..."}` — chỉ gửi tới đúng các kết nối (mọi tab/thiết bị) của 2 người trong cuộc, không broadcast ra phòng.
+6. Server broadcast trong phạm vi phòng: `{"type":"message",...}`, `{"type":"typing",...}`, `{"type":"presence","roomId","count","users":[{"userId","displayName"}]}` (kèm danh sách tên, không chỉ số lượng), và `{"type":"room_deleted","roomId"}` nếu admin xoá phòng đang mở.
+7. Tin nhắn riêng nhận về dạng: `{"type":"dm","id","user_a","user_b","sender_id","content","created_at","sender_display_name"}`.
+
+## REST API — riêng tư (yêu cầu header `Authorization: Bearer <token phiên khách>`)
+
+`GET /api/dm/:otherUserId/messages?limit=50` → lịch sử chat riêng giữa người gọi API (theo token) và `otherUserId`. Chỉ 2 người trong cuộc trò chuyện mới gọi được — người khác dùng token của mình gọi vào sẽ không thấy nội dung của người khác.
 
 ## REST API — admin (bảo vệ bằng header `x-admin-token`, khác với token phiên khách)
 
@@ -62,4 +68,8 @@ Environment variables:
 ```json
 { "name": "Ẩm thực", "slug": "food", "icon": "🍜" }
 ```
+`DELETE /api/admin/rooms/:roomId` — xoá phòng (xoá vĩnh viễn cả tin nhắn trong phòng do FK CASCADE). Nếu có khách đang ở trong phòng bị xoá, họ sẽ nhận `{"type":"room_deleted","roomId":"..."}` qua WebSocket.
+
+`GET /api/admin/dm` → log 200 tin nhắn riêng gần nhất, toàn hệ thống (để theo dõi/kiểm duyệt) — khác hẳn với `/api/dm/:otherUserId/messages` ở trên vốn chỉ cho 2 người trong cuộc xem.
+
 Yêu cầu header `x-admin-token`. Nếu `ADMIN_TOKEN` chưa được đặt trên server, các route này trả về lỗi 503 để tránh vô tình để lộ dữ liệu khách.

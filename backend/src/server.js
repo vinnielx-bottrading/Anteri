@@ -74,6 +74,17 @@ function requireAdmin(req, r, next) {
   next();
 }
 
+/* ---------------- xác thực khách cho các API riêng tư (khác với ADMIN_TOKEN) ---------------- */
+function requireGuestAuth(req, r, next) {
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  const payload = verifyToken(token);
+  if (!payload) return r.status(401).json({ error: "Chưa đăng nhập hoặc phiên đã hết hạn." });
+  req.guestId = payload.id;
+  next();
+}
+function pairKey(idA, idB) { return idA < idB ? [idA, idB] : [idB, idA]; }
+
 /* ---------------- routes cơ bản ---------------- */
 app.get("/", (_, r) => r.json({ ok: true, service: "community-chat-backend", version: "1.0.0" }));
 app.get("/health", async (_, r) => {
@@ -93,6 +104,21 @@ app.get("/api/rooms/:roomId/messages", async (req, r) => {
     );
     r.json(rows.reverse());
   } catch { r.status(500).json({ error: "Không thể tải tin nhắn." }); }
+});
+
+/* Tin nhắn riêng — chỉ người trong token (req.guestId) và người kia mới xem được */
+app.get("/api/dm/:otherUserId/messages", requireGuestAuth, async (req, r) => {
+  try {
+    const other = req.params.otherUserId;
+    if (!other || other === req.guestId) return r.status(400).json({ error: "Người nhận không hợp lệ." });
+    const [a, b] = pairKey(req.guestId, other);
+    const limit = Math.min(Number(req.query.limit || 50), 100);
+    const { rows } = await query(
+      "SELECT dm.id,dm.user_a,dm.user_b,dm.sender_id,dm.content,dm.created_at,u.display_name AS sender_display_name FROM direct_messages dm JOIN users u ON u.id=dm.sender_id WHERE dm.user_a=$1 AND dm.user_b=$2 ORDER BY dm.created_at DESC LIMIT $3",
+      [a, b, limit]
+    );
+    r.json(rows.reverse());
+  } catch (e) { console.error(e); r.status(500).json({ error: "Không thể tải tin nhắn riêng." }); }
 });
 
 /* ---------------- đăng ký / đăng nhập khách ---------------- */
@@ -169,12 +195,53 @@ app.post("/api/admin/rooms", requireAdmin, async (req, r) => {
   }
 });
 
+app.delete("/api/admin/rooms/:roomId", requireAdmin, async (req, r) => {
+  try {
+    const { rows } = await query("DELETE FROM rooms WHERE id=$1 RETURNING id", [req.params.roomId]);
+    if (!rows.length) return r.status(404).json({ error: "Không tìm thấy phòng." });
+    // ngắt kết nối các client đang ở phòng vừa xoá để họ không kẹt trong phòng không còn tồn tại
+    for (const [ws, state] of clients) {
+      if (state.roomId === req.params.roomId) { state.roomId = null; send(ws, { type: "room_deleted", roomId: req.params.roomId }); }
+    }
+    r.json({ ok: true });
+  } catch (e) { console.error(e); r.status(500).json({ error: "Không thể xoá phòng." }); }
+});
+
+/* Log tin nhắn riêng cho admin theo dõi/kiểm duyệt — khách bình thường KHÔNG gọi được route này (khác token). */
+app.get("/api/admin/dm", requireAdmin, async (_, r) => {
+  try {
+    const { rows } = await query(`
+      SELECT dm.id, dm.user_a, dm.user_b, dm.sender_id, dm.content, dm.created_at,
+             ua.display_name AS user_a_name, ub.display_name AS user_b_name, us.display_name AS sender_name
+      FROM direct_messages dm
+      JOIN users ua ON ua.id = dm.user_a
+      JOIN users ub ON ub.id = dm.user_b
+      JOIN users us ON us.id = dm.sender_id
+      ORDER BY dm.created_at DESC LIMIT 200
+    `);
+    r.json(rows);
+  } catch (e) { console.error(e); r.status(500).json({ error: "Không thể tải tin nhắn riêng." }); }
+});
+
 /* ---------------- WebSocket realtime ---------------- */
 const wss = new WebSocketServer({ server, path: "/ws" });
 const clients = new Map();
 const send = (ws, p) => ws.readyState === 1 && ws.send(JSON.stringify(p));
-const broadcast = p => { const d = JSON.stringify(p); for (const ws of clients.keys()) if (ws.readyState === 1) ws.send(d); };
-const online = () => new Set([...clients.values()].map(x => x.userId).filter(Boolean)).size;
+function roomPresence(roomId) {
+  const map = new Map(); // userId -> displayName, khử trùng lặp nếu 1 người mở nhiều tab
+  for (const state of clients.values()) {
+    if (state.roomId === roomId && state.userId) map.set(state.userId, state.displayName);
+  }
+  return [...map.entries()].map(([userId, displayName]) => ({ userId, displayName }));
+}
+function broadcastRoomPresence(roomId) {
+  if (!roomId) return;
+  const users = roomPresence(roomId);
+  const payload = JSON.stringify({ type: "presence", roomId, count: users.length, users });
+  for (const [ws, state] of clients) {
+    if (state.roomId === roomId && ws.readyState === 1) ws.send(payload);
+  }
+}
 
 wss.on("connection", ws => {
   const state = { userId: null, displayName: null, roomId: null, alive: true };
@@ -194,13 +261,15 @@ wss.on("connection", ws => {
         if (!rows.length) return send(ws, { type: "error", code: "session_expired", message: "Tài khoản không tồn tại, vui lòng đăng nhập lại." });
 
         const u = rows[0];
+        const previousRoomId = state.roomId;
         state.userId = u.id;
         state.displayName = u.display_name; // biệt danh — lấy từ DB, không cho client tự khai để tránh giả mạo
         state.roomId = m.roomId;
         await query("UPDATE users SET last_seen_at=NOW() WHERE id=$1", [u.id]);
 
         send(ws, { type: "joined", userId: u.id, displayName: u.display_name, fullName: u.full_name, roomId: state.roomId });
-        broadcast({ type: "presence", count: online() });
+        if (previousRoomId && previousRoomId !== state.roomId) broadcastRoomPresence(previousRoomId);
+        broadcastRoomPresence(state.roomId);
         return;
       }
 
@@ -212,13 +281,34 @@ wss.on("connection", ws => {
           "INSERT INTO messages(room_id,user_id,content) VALUES($1,$2,$3) RETURNING id,room_id,user_id,content,created_at",
           [state.roomId, state.userId, content]
         );
-        broadcast({ type: "message", ...rows[0], display_name: state.displayName });
+        const payload = JSON.stringify({ type: "message", ...rows[0], display_name: state.displayName });
+        for (const [cws, cstate] of clients) if (cstate.roomId === state.roomId && cws.readyState === 1) cws.send(payload);
         return;
       }
 
       if (m.type === "typing") {
         if (!state.userId || !state.roomId) return;
-        broadcast({ type: "typing", userId: state.userId, displayName: state.displayName, roomId: state.roomId, isTyping: Boolean(m.isTyping) });
+        const payload = JSON.stringify({ type: "typing", userId: state.userId, displayName: state.displayName, roomId: state.roomId, isTyping: Boolean(m.isTyping) });
+        for (const [cws, cstate] of clients) if (cstate.roomId === state.roomId && cws.readyState === 1) cws.send(payload);
+      }
+
+      if (m.type === "dm_send") {
+        if (!state.userId) return send(ws, { type: "error", message: "Chưa đăng nhập." });
+        const toUserId = String(m.toUserId || "");
+        if (!toUserId || toUserId === state.userId) return;
+        const content = String(m.content || "").trim();
+        if (!content || content.length > 5000) return;
+        const [a, b] = pairKey(state.userId, toUserId);
+        const { rows } = await query(
+          "INSERT INTO direct_messages(user_a,user_b,sender_id,content) VALUES($1,$2,$3,$4) RETURNING id,user_a,user_b,sender_id,content,created_at",
+          [a, b, state.userId, content]
+        );
+        const payload = JSON.stringify({ type: "dm", ...rows[0], sender_display_name: state.displayName });
+        // chỉ gửi cho đúng 2 người trong cuộc trò chuyện (mọi tab/thiết bị họ đang mở), không broadcast rộng
+        for (const [cws, cstate] of clients) {
+          if ((cstate.userId === state.userId || cstate.userId === toUserId) && cws.readyState === 1) cws.send(payload);
+        }
+        return;
       }
     } catch (e) {
       console.error(e);
@@ -226,7 +316,11 @@ wss.on("connection", ws => {
     }
   });
 
-  ws.on("close", () => { clients.delete(ws); broadcast({ type: "presence", count: online() }); });
+  ws.on("close", () => {
+    const roomId = state.roomId;
+    clients.delete(ws);
+    if (roomId) broadcastRoomPresence(roomId);
+  });
 });
 
 setInterval(() => {

@@ -45,11 +45,13 @@ Tạo **New Web Service**, trỏ vào repo, cấu hình:
 
 Sau khi deploy xong sẽ có URL dạng `https://ten-backend.onrender.com`.
 
-⚠️ **Nếu bạn đã deploy trước đó và mới cập nhật code này**: vào lại Neon SQL Editor, chạy lại toàn bộ `backend/schema.sql` — file này an toàn để chạy nhiều lần, sẽ tự thêm các cột mới (họ tên, số điện thoại, mật khẩu) mà không xoá dữ liệu cũ.
+⚠️ **Nếu bạn đã deploy trước đó và mới cập nhật code này**: vào lại Neon SQL Editor, chạy lại toàn bộ `backend/schema.sql` — file này an toàn để chạy nhiều lần, sẽ tự thêm các cột/bảng mới (họ tên, số điện thoại, mật khẩu, bảng chat riêng) mà không xoá dữ liệu cũ.
 
-## 4. Đăng ký / đăng nhập khách (mới)
+## 4. Đăng ký / đăng nhập khách, và chat riêng (mới)
 
-Khách vào chat lần đầu phải đăng ký: **họ tên, số điện thoại, biệt danh, mật khẩu**. Lần sau quay lại (trong vòng 4 giờ, cùng trình duyệt) sẽ tự đăng nhập lại không cần nhập gì; nếu quá 4 giờ hoặc đổi thiết bị, cần đăng nhập bằng **số điện thoại + mật khẩu**. Chi tiết API xem `backend/README.md`.
+Khách vào chat lần đầu phải đăng ký: **họ tên, số điện thoại, biệt danh, mật khẩu**. Lần sau quay lại (trong vòng 4 giờ, cùng trình duyệt) sẽ tự đăng nhập lại không cần nhập gì; nếu quá 4 giờ hoặc đổi thiết bị, cần đăng nhập bằng **số điện thoại + mật khẩu**.
+
+Ngoài chat nhóm theo phòng (ai trong phòng cũng thấy), giờ có thêm **chat riêng 1-1**: click vào tên ai đó (trong danh sách "Đang online" hoặc trong 1 tin nhắn phòng của họ) sẽ mở cửa sổ riêng, chỉ 2 người đó thấy nội dung. Admin vẫn xem được log tin nhắn riêng ở tab Messages → "Tin nhắn riêng" trong `admin.html` để theo dõi/kiểm duyệt (cần Admin Token). Chi tiết API xem `backend/README.md`.
 
 ## 5. Test nhanh (chạy độc lập, chưa cần nhúng)
 

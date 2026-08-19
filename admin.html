@@ -105,7 +105,7 @@ th{font-size:11px;color:#8a94a3;text-transform:uppercase}
     <section class="card">
       <h2>Danh sách phòng</h2>
       <div class="table-wrap">
-        <table><thead><tr><th>Phòng</th><th>Slug</th><th>ID</th><th>Trạng thái</th></tr></thead>
+        <table><thead><tr><th>Phòng</th><th>Slug</th><th>ID</th><th>Thao tác</th></tr></thead>
         <tbody id="roomTable"></tbody></table>
       </div>
     </section>
@@ -114,14 +114,31 @@ th{font-size:11px;color:#8a94a3;text-transform:uppercase}
   <!-- ================= MESSAGES ================= -->
   <section class="view" id="view-messages">
     <section class="card">
-      <h2>Tin nhắn theo phòng</h2>
-      <div class="toolbar" style="margin-bottom:10px">
-        <select id="roomSelect"></select>
-        <button class="btn secondary" onclick="loadMessages()">Tải tin nhắn</button>
+      <div class="toolbar" style="margin-bottom:16px">
+        <button class="btn" id="msgTabRoom" onclick="switchMsgTab('room')">Theo phòng</button>
+        <button class="btn secondary" id="msgTabDM" onclick="switchMsgTab('dm')">🔒 Tin nhắn riêng</button>
       </div>
-      <div class="table-wrap">
-        <table><thead><tr><th>Thời gian</th><th>Người gửi</th><th>Nội dung</th><th>Room</th></tr></thead>
-        <tbody id="messageTable"></tbody></table>
+
+      <div id="roomMsgSection">
+        <h2>Tin nhắn theo phòng</h2>
+        <div class="toolbar" style="margin-bottom:10px">
+          <select id="roomSelect"></select>
+          <button class="btn secondary" onclick="loadMessages()">Tải tin nhắn</button>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Thời gian</th><th>Người gửi</th><th>Nội dung</th><th>Room</th></tr></thead>
+          <tbody id="messageTable"></tbody></table>
+        </div>
+      </div>
+
+      <div id="dmMsgSection" style="display:none">
+        <h2>Tin nhắn riêng (200 gần nhất, toàn hệ thống)</h2>
+        <p class="hint">Yêu cầu Admin Token (tab Settings). Đây là log để theo dõi/kiểm duyệt — người dùng thường không xem được tin nhắn của người khác.</p>
+        <div class="toolbar" style="margin-bottom:10px"><button class="btn secondary" onclick="loadDM()">↻ Tải lại</button></div>
+        <div class="table-wrap">
+          <table><thead><tr><th>Thời gian</th><th>Người gửi</th><th>Người nhận</th><th>Nội dung</th></tr></thead>
+          <tbody id="dmTable"></tbody></table>
+        </div>
       </div>
     </section>
   </section>
@@ -174,7 +191,7 @@ const VIEW_META = {
   dashboard: ["Admin Dashboard","Quản lý Community Chat"],
   users: ["Người dùng","Danh sách khách đã đăng ký tài khoản chat"],
   rooms: ["Phòng chat","Quản lý và tạo phòng chat"],
-  messages: ["Tin nhắn","Xem tin nhắn theo từng phòng"],
+  messages: ["Tin nhắn","Xem tin nhắn theo phòng và log tin nhắn riêng"],
   settings: ["Cài đặt","Cấu hình kết nối backend và admin token"],
 };
 document.querySelectorAll(".nav").forEach(el => {
@@ -243,8 +260,21 @@ async function loadAll(){
 function renderRooms(){
   $("roomTable").innerHTML = roomList.map(r => `<tr>
     <td><div class="room"><div class="roomicon">${esc(r.icon||"💬")}</div><b>${esc(r.name)}</b></div></td>
-    <td>${esc(r.slug)}</td><td>${esc(r.id)}</td><td><span style="color:#22a06b">● Active</span></td>
+    <td>${esc(r.slug)}</td><td>${esc(r.id)}</td>
+    <td><button class="btn secondary" style="padding:6px 11px;font-size:12px;color:#dc2626" onclick="deleteRoom('${r.id}','${esc(r.name).replace(/'/g,"\\'")}')">🗑 Xoá</button></td>
   </tr>`).join("") || `<tr><td colspan="4" class="empty">Chưa có phòng</td></tr>`;
+}
+async function deleteRoom(id, name){
+  if (!API) { alert("Kết nối backend trước (tab Settings)."); return; }
+  if (!ADMIN_TOKEN) { alert("Nhập Admin Token ở tab Settings trước."); return; }
+  if (!confirm(`Xoá phòng "${name}"? Toàn bộ tin nhắn trong phòng này sẽ bị xoá vĩnh viễn và không thể khôi phục.`)) return;
+  try{
+    const r = await fetch(API + "/api/admin/rooms/" + id, { method: "DELETE", headers: { "x-admin-token": ADMIN_TOKEN } });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Không thể xoá phòng.");
+    log("Đã xoá phòng: " + name);
+    await loadAll();
+  }catch(e){ alert(e.message); log("ERROR: " + e.message); }
 }
 async function createRoom(){
   if (!API) { alert("Kết nối backend trước (tab Settings)."); return; }
@@ -279,6 +309,37 @@ async function loadMessages(){
       <td>${esc(m.room_id)}</td>
     </tr>`).join("") || `<tr><td colspan="4" class="empty">Chưa có tin nhắn</td></tr>`;
   }catch(e){ log("ERROR: " + e.message); }
+}
+
+/* ---------- tin nhắn riêng (admin API — cần Admin Token) ---------- */
+function switchMsgTab(tab){
+  $("roomMsgSection").style.display = tab === "room" ? "block" : "none";
+  $("dmMsgSection").style.display = tab === "dm" ? "block" : "none";
+  $("msgTabRoom").className = "btn" + (tab === "room" ? "" : " secondary");
+  $("msgTabDM").className = "btn" + (tab === "dm" ? "" : " secondary");
+  if (tab === "dm") loadDM();
+}
+async function loadDM(){
+  if (!API) { $("dmTable").innerHTML = `<tr><td colspan="4" class="empty">Kết nối backend ở tab Settings trước.</td></tr>`; return; }
+  if (!ADMIN_TOKEN) { $("dmTable").innerHTML = `<tr><td colspan="4" class="empty">Nhập Admin Token ở tab Settings để xem log này.</td></tr>`; return; }
+  $("dmTable").innerHTML = `<tr><td colspan="4" class="empty">Đang tải...</td></tr>`;
+  try{
+    const r = await fetch(API + "/api/admin/dm", { headers: { "x-admin-token": ADMIN_TOKEN } });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Không thể tải tin nhắn riêng.");
+    $("dmTable").innerHTML = data.map(m => {
+      const recipientName = m.sender_id === m.user_a ? m.user_b_name : m.user_a_name;
+      return `<tr>
+        <td>${new Date(m.created_at).toLocaleString("vi-VN")}</td>
+        <td><b>${esc(m.sender_name)}</b></td>
+        <td>${esc(recipientName)}</td>
+        <td style="max-width:400px;white-space:normal">${esc(m.content)}</td>
+      </tr>`;
+    }).join("") || `<tr><td colspan="4" class="empty">Chưa có tin nhắn riêng nào</td></tr>`;
+  }catch(e){
+    $("dmTable").innerHTML = `<tr><td colspan="4" class="empty">${esc(e.message)}</td></tr>`;
+    log("ERROR: " + e.message);
+  }
 }
 
 /* ---------- users (admin API — cần token) ---------- */

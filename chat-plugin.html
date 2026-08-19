@@ -50,6 +50,33 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Sego
 .icon-btn{width:35px;height:35px;border:0;background:#f5f6f8;border-radius:10px;cursor:pointer;color:#667085;flex:none}
 .icon-btn:hover{background:#eceff3}
 
+/* online list */
+.online-list{padding:0 8px 6px;max-height:130px;overflow:auto;flex:none}
+.online-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:9px;font-size:12.5px;cursor:pointer;position:relative}
+.online-item:hover{background:#f5f6f8}
+.online-item .avatar{width:24px;height:24px;font-size:9px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:750;flex:none;background:var(--primary2);position:relative}
+.online-item .avatar::after{content:"";position:absolute;right:-1px;bottom:-1px;width:7px;height:7px;border-radius:50%;background:#22c55e;border:1.5px solid #fff}
+.online-item .you{color:#98a2b3;font-size:10px;margin-left:4px}
+.online-empty{padding:8px;font-size:11.5px;color:#98a2b3}
+.dm-badge{margin-left:auto;background:#ef4444;color:#fff;font-size:9.5px;font-weight:800;border-radius:999px;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 4px;flex:none}
+
+/* cửa sổ chat riêng — phủ toàn bộ khu vực .main, tách biệt với chat nhóm */
+.dm-panel{position:absolute;inset:0;background:#fff;display:none;flex-direction:column;z-index:16}
+.dm-panel.open{display:flex}
+.dm-header{height:68px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 14px;flex:none}
+.dm-header .avatar{width:36px;height:36px;font-size:13px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:750;flex:none;background:var(--primary)}
+.dm-title{font-weight:800;font-size:14px}
+.dm-sub{font-size:11px;color:#98a2b3}
+.dm-messages{flex:1;overflow:auto;padding:18px 20px}
+
+/* emoji picker */
+.emoji-btn{background:transparent;font-size:19px;line-height:1}
+.emoji-btn:hover{background:#eceff3}
+.emoji-panel{position:absolute;bottom:64px;left:13px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:9px;display:none;grid-template-columns:repeat(8,1fr);gap:2px;max-width:280px;z-index:25}
+.emoji-panel.open{display:grid}
+.emoji-panel button{border:0;background:transparent;font-size:19px;cursor:pointer;border-radius:8px;padding:5px;line-height:1}
+.emoji-panel button:hover{background:#f1f3f5}
+
 /* main */
 .main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 .header{height:68px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 18px;gap:10px}
@@ -69,7 +96,7 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Sego
 .bubble{background:var(--bubble);padding:10px 12px;border-radius:5px 14px 14px 14px;font-size:13px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap}
 .msg.me .bubble{background:var(--primary);color:#fff;border-radius:14px 5px 14px 14px}
 .typing{font-size:11px;color:#98a2b3;padding:0 20px 7px;min-height:16px}
-.composer{border-top:1px solid var(--line);padding:11px 13px;background:#fff}
+.composer{border-top:1px solid var(--line);padding:11px 13px;background:#fff;position:relative}
 .composer-box{border:1px solid #dfe4ea;border-radius:14px;padding:8px 9px;display:flex;align-items:flex-end;gap:7px;background:#fafbfc}
 .composer textarea{border:0;background:transparent;outline:0;resize:none;flex:1;font:inherit;font-size:13px;min-height:22px;max-height:90px}
 .composer textarea:disabled{opacity:.5}
@@ -111,6 +138,7 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Sego
  .profile{justify-content:center}.header{padding:0 12px}.messages{padding:15px 12px}
  .msg{max-width:88%}
  .launcher{right:17px;bottom:17px}
+ .online-list{display:none}
 }
 
 /* embed mode: trang này chạy trong iframe do embed.js tạo ra trên website khách.
@@ -145,6 +173,9 @@ html.embed .closeBtn{display:inline-flex!important}
     <div class="section-title">Phòng chat</div>
     <div class="rooms" id="rooms"></div>
 
+    <div class="section-title">Đang online (<span id="onlineCount">0</span>)</div>
+    <div class="online-list" id="onlineList"><div class="online-empty">Chưa có ai online.</div></div>
+
     <div class="profile">
       <div class="avatar" id="myAvatar">?</div>
       <div class="profile-text"><div class="profile-name" id="myName">Khách</div><div class="profile-status off" id="connStatus">● Chưa kết nối</div></div>
@@ -175,9 +206,11 @@ html.embed .closeBtn{display:inline-flex!important}
 
     <div class="composer">
       <div class="composer-box">
+        <button class="icon-btn emoji-btn" id="emojiBtn" type="button" title="Emoji">🙂</button>
         <textarea id="input" rows="1" placeholder="Viết tin nhắn..." disabled></textarea>
         <button class="send" id="send" disabled>➤</button>
       </div>
+      <div class="emoji-panel" id="emojiPanel"></div>
     </div>
 
     <!-- Auth modal (đăng nhập / đăng ký) — hiển thị đè lên khu vực chat chính, không che sidebar -->
@@ -205,6 +238,25 @@ html.embed .closeBtn{display:inline-flex!important}
         <div class="modal-error" id="authError"></div>
         <div class="modal-actions">
           <button class="btn primary" id="authSubmit" style="flex:1">Đăng nhập</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cửa sổ chat riêng 1-1 — phủ toàn bộ khu vực chat nhóm, chỉ 2 người trong cuộc mới xem được -->
+    <div class="dm-panel" id="dmPanel">
+      <div class="dm-header">
+        <button class="icon-btn" id="dmBack" title="Quay lại phòng chung">←</button>
+        <div class="avatar" id="dmAvatar">?</div>
+        <div>
+          <div class="dm-title" id="dmTitle">—</div>
+          <div class="dm-sub">🔒 Chỉ 2 người thấy được</div>
+        </div>
+      </div>
+      <div class="messages dm-messages" id="dmMessages"></div>
+      <div class="composer">
+        <div class="composer-box">
+          <textarea id="dmInput" rows="1" placeholder="Nhắn riêng..."></textarea>
+          <button class="send" id="dmSend">➤</button>
         </div>
       </div>
     </div>
@@ -251,6 +303,9 @@ let currentRoomId = null;
 let typingTimeout = null;
 let unreadCount = 0;
 let chatOpen = false;
+let activeDM = null; // { userId, displayName } — khi != null nghĩa là đang mở cửa sổ chat riêng
+let lastOnlineUsers = [];
+const dmUnread = new Map(); // userId -> số tin nhắn riêng chưa đọc
 let booted = false;
 let authMode = "login";
 
@@ -260,6 +315,7 @@ const messagesEl = $("messages"), typingEl = $("typing"), input = $("input"), se
 const roomsEl = $("rooms"), headerIcon = $("headerIcon"), headerTitle = $("headerTitle"), headerSub = $("headerSub");
 const connStatus = $("connStatus"), myName = $("myName"), myAvatar = $("myAvatar");
 const authOverlay = $("authOverlay"), authError = $("authError"), authNotice = $("authNotice");
+const dmPanel = $("dmPanel"), dmMessages = $("dmMessages"), dmInput = $("dmInput"), dmSendBtn = $("dmSend"), dmTitle = $("dmTitle"), dmAvatar = $("dmAvatar");
 const backendOverlay = $("backendOverlay"), backendError = $("backendError");
 
 /* ---------- launcher open/close ---------- */
@@ -421,6 +477,9 @@ function forceLogout(){
   if (WS) { try { WS.onclose = null; WS.close(); } catch(e) {} }
   setConnStatus(false);
   currentRoomId = null;
+  activeDM = null; dmUnread.clear();
+  dmPanel.classList.remove("open");
+  renderOnlineList([]);
   messagesEl.innerHTML = `<div class="empty"><div class="empty-icon">🔐</div><div>Vui lòng đăng nhập / đăng ký để bắt đầu chat.</div></div>`;
   headerTitle.textContent = "Chưa chọn phòng";
   openAuth("login", "Phiên đăng nhập đã hết hạn sau 4 giờ, vui lòng đăng nhập lại.");
@@ -456,6 +515,16 @@ function openWS(){
     if (m.type === "message") onIncomingMessage(m);
     else if (m.type === "typing") onTyping(m);
     else if (m.type === "presence") onPresence(m);
+    else if (m.type === "dm") onIncomingDM(m);
+    else if (m.type === "room_deleted") {
+      if (m.roomId === currentRoomId) {
+        currentRoomId = null;
+        messagesEl.innerHTML = `<div class="empty"><div class="empty-icon">🗑️</div><div>Phòng này đã bị xoá.</div></div>`;
+        headerTitle.textContent = "Chưa chọn phòng";
+        renderOnlineList([]);
+      }
+      loadRooms();
+    }
     else if (m.type === "error") {
       if (m.code === "session_expired") { forceLogout(); return; }
       console.error("Chat error:", m.message);
@@ -505,6 +574,7 @@ function selectRoom(id){
     headerTitle.textContent = r.name;
   }
   typingEl.textContent = "";
+  renderOnlineList([]);
   loadMessages(id);
   joinCurrentRoom();
 }
@@ -533,9 +603,13 @@ function appendMessage(m, scroll = true){
   const el = document.createElement("div");
   el.className = "msg " + (me ? "me" : "");
   const time = m.created_at ? new Date(m.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "";
-  el.innerHTML = `<div class="avatar">${esc(initials(m.display_name))}</div>
-    <div class="msg-content"><div class="meta"><b>${esc(m.display_name || "Khách")}</b><span>${esc(time)}</span></div><div class="bubble"></div></div>`;
+  const clickable = !me ? `data-uid="${esc(m.user_id)}" data-name="${esc(m.display_name||"Khách")}" style="cursor:pointer" title="Nhắn riêng"` : "";
+  el.innerHTML = `<div class="avatar" ${clickable}>${esc(initials(m.display_name))}</div>
+    <div class="msg-content"><div class="meta"><b ${clickable}>${esc(m.display_name || "Khách")}</b><span>${esc(time)}</span></div><div class="bubble"></div></div>`;
   el.querySelector(".bubble").textContent = m.content;
+  if (!me) {
+    el.querySelectorAll("[data-uid]").forEach(x => { x.onclick = () => openDM(x.dataset.uid, x.dataset.name); });
+  }
   messagesEl.appendChild(el);
   if (scroll) scrollToBottom();
 }
@@ -552,7 +626,28 @@ function onTyping(m){
   typingEl.textContent = m.isTyping ? `${m.displayName} đang nhập...` : "";
 }
 function onPresence(m){
+  if (m.roomId && m.roomId !== currentRoomId) return; // presence của phòng khác, bỏ qua
   headerSub.textContent = (m.count || 0) + " người đang online";
+  lastOnlineUsers = m.users || [];
+  renderOnlineList(lastOnlineUsers);
+}
+function renderOnlineList(users){
+  $("onlineCount").textContent = users.length;
+  if (!users.length) { $("onlineList").innerHTML = `<div class="online-empty">Chưa có ai online.</div>`; return; }
+  $("onlineList").innerHTML = users.map(u => {
+    const unread = dmUnread.get(u.userId) || 0;
+    return `<div class="online-item" data-uid="${esc(u.userId)}" data-name="${esc(u.displayName||"Khách")}">
+      <div class="avatar">${esc(initials(u.displayName))}</div>
+      <span>${esc(u.displayName || "Khách")}</span>
+      ${u.userId === userId ? '<span class="you">(bạn)</span>' : ''}
+      ${unread > 0 ? `<span class="dm-badge">${unread > 9 ? "9+" : unread}</span>` : ''}
+    </div>`;
+  }).join("");
+  $("onlineList").querySelectorAll(".online-item").forEach(el => {
+    const uid = el.dataset.uid;
+    if (uid === userId) return; // không tự nhắn riêng cho chính mình
+    el.onclick = () => openDM(uid, el.dataset.name);
+  });
 }
 
 /* ---------- composer ---------- */
@@ -579,6 +674,109 @@ function sendTyping(isTyping){
     WS.send(JSON.stringify({ type: "typing", isTyping }));
   }
 }
+
+/* ---------- emoji picker ---------- */
+const EMOJIS = ["😀","😁","😂","🤣","😊","🙂","😉","😍","🥰","😘","😜","🤔","😎","🤩","🥳","😴",
+  "😢","😭","😡","😱","🙄","😅","😇","🤗","👍","👎","👏","🙏","🤝","💪","👀","✌️",
+  "❤️","🔥","🎉","💯","✅","❌","⭐","🌸","☕","🍜","🍕","🎂","✈️","🎮","💬","👋"];
+const emojiBtn = $("emojiBtn"), emojiPanel = $("emojiPanel");
+emojiPanel.innerHTML = EMOJIS.map(e => `<button type="button">${e}</button>`).join("");
+emojiBtn.onclick = (ev) => {
+  ev.stopPropagation();
+  if (input.disabled) return;
+  emojiPanel.classList.toggle("open");
+};
+emojiPanel.addEventListener("click", e => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  insertAtCursor(input, btn.textContent);
+  emojiPanel.classList.remove("open");
+  input.focus();
+  sendTyping(true);
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => sendTyping(false), 1500);
+});
+document.addEventListener("click", (e) => {
+  if (emojiPanel.classList.contains("open") && !emojiPanel.contains(e.target) && e.target !== emojiBtn) {
+    emojiPanel.classList.remove("open");
+  }
+});
+function insertAtCursor(el, text){
+  const start = el.selectionStart ?? el.value.length;
+  const end = el.selectionEnd ?? el.value.length;
+  el.value = el.value.slice(0, start) + text + el.value.slice(end);
+  const pos = start + text.length;
+  el.selectionStart = el.selectionEnd = pos;
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 90) + "px";
+}
+
+/* ---------- chat riêng 1-1 (DM) ---------- */
+$("dmBack").onclick = closeDM;
+function closeDM(){
+  activeDM = null;
+  dmPanel.classList.remove("open");
+}
+async function openDM(otherId, otherName){
+  if (!otherId || otherId === userId) return;
+  activeDM = { userId: otherId, displayName: otherName || "Khách" };
+  dmTitle.textContent = otherName || "Khách";
+  dmAvatar.textContent = initials(otherName);
+  dmUnread.delete(otherId);
+  renderOnlineList(lastOnlineUsers);
+  dmPanel.classList.add("open");
+  dmMessages.innerHTML = `<div class="date">Đang tải...</div>`;
+  try{
+    const r = await fetch(API + "/api/dm/" + otherId + "/messages?limit=50", { headers: { Authorization: "Bearer " + sessionToken } });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Không tải được.");
+    dmMessages.innerHTML = "";
+    if (!data.length) {
+      dmMessages.innerHTML = `<div class="empty"><div class="empty-icon">💌</div><div>Chưa có tin nhắn riêng nào. Gửi lời chào đầu tiên nhé!</div></div>`;
+    } else {
+      data.forEach(m => appendDmMessage(m));
+    }
+    dmMessages.scrollTop = dmMessages.scrollHeight;
+  }catch(e){
+    dmMessages.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div>Không tải được tin nhắn riêng.</div></div>`;
+  }
+}
+function appendDmMessage(m){
+  const me = m.sender_id === userId;
+  const el = document.createElement("div");
+  el.className = "msg " + (me ? "me" : "");
+  const time = m.created_at ? new Date(m.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "";
+  const name = me ? (guest?.nickname || "Bạn") : (activeDM ? activeDM.displayName : (m.sender_display_name || "Khách"));
+  el.innerHTML = `<div class="avatar">${esc(initials(name))}</div>
+    <div class="msg-content"><div class="meta"><b>${esc(name)}</b><span>${esc(time)}</span></div><div class="bubble"></div></div>`;
+  el.querySelector(".bubble").textContent = m.content;
+  dmMessages.appendChild(el);
+  dmMessages.scrollTop = dmMessages.scrollHeight;
+}
+function onIncomingDM(m){
+  const other = m.user_a === userId ? m.user_b : m.user_a;
+  if (activeDM && activeDM.userId === other) {
+    appendDmMessage(m);
+  } else if (m.sender_id !== userId) {
+    dmUnread.set(other, (dmUnread.get(other) || 0) + 1);
+    renderOnlineList(lastOnlineUsers);
+    if (!chatOpen) { unreadCount++; updateUnread(); }
+  }
+}
+function sendDM(){
+  const text = dmInput.value.trim();
+  if (!text || !activeDM || !WS || WS.readyState !== 1) return;
+  WS.send(JSON.stringify({ type: "dm_send", toUserId: activeDM.userId, content: text }));
+  dmInput.value = ""; dmInput.style.height = "auto";
+}
+dmSendBtn.onclick = sendDM;
+dmInput.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendDM(); }
+});
+dmInput.addEventListener("input", () => {
+  dmInput.style.height = "auto";
+  dmInput.style.height = Math.min(dmInput.scrollHeight, 90) + "px";
+});
 </script>
 </body>
 </html>

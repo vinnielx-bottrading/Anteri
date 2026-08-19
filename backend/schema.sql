@@ -40,3 +40,16 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
 
 -- Số điện thoại phải duy nhất (bỏ qua các dòng cũ có phone NULL từ trước khi có tính năng đăng nhập)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone) WHERE phone IS NOT NULL;
+
+-- ===== Migration: chat riêng 1-1 (chỉ 2 người trong cuộc trò chuyện + admin xem được) =====
+-- user_a luôn là id nhỏ hơn user_b (so sánh chuỗi UUID) để mỗi cặp người dùng chỉ có 1 "luồng" duy nhất,
+-- không phân biệt ai nhắn trước — sender_id mới là người thực sự gửi tin nhắn đó.
+CREATE TABLE IF NOT EXISTS direct_messages(
+  id BIGSERIAL PRIMARY KEY,
+  user_a UUID REFERENCES users(id) ON DELETE CASCADE,
+  user_b UUID REFERENCES users(id) ON DELETE CASCADE,
+  sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL CHECK(char_length(content)<=5000),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_dm_pair_created ON direct_messages(user_a,user_b,created_at DESC);
