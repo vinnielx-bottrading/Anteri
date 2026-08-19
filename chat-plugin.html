@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Chat Plugin — Community Chat</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#f4f6f8;--panel:#fff;--text:#17202a;--muted:#7b8794;
+  --line:#e7ebef;--primary:#4f46e5;--primary2:#6366f1;
+  --bubble:#f0f2f5;--shadow:0 20px 60px rgba(20,30,50,.16)
+}
+body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(135deg,#eef2ff,#f8fafc 45%,#eef7f5);color:var(--text);min-height:100vh}
+.demo{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:30px}
+.card{max-width:850px;text-align:center}
+.card h1{font-size:42px;margin:0 0 12px;letter-spacing:-1px}
+.card p{color:var(--muted);font-size:17px;line-height:1.6}
+.badge{display:inline-flex;padding:8px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:13px;margin-bottom:18px}
+
+/* launcher */
+.launcher{position:fixed;right:25px;bottom:25px;width:62px;height:62px;border:0;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary2));color:white;box-shadow:0 12px 30px rgba(79,70,229,.35);font-size:26px;cursor:pointer;z-index:20;transition:.2s}
+.launcher:hover{transform:translateY(-3px) scale(1.03)}
+.unread{position:absolute;right:-1px;top:-2px;background:#ef4444;color:white;border:3px solid white;border-radius:50%;min-width:22px;height:22px;font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center}
+
+/* chat */
+.chat{position:fixed;right:25px;bottom:98px;width:760px;height:650px;background:var(--panel);border:1px solid rgba(0,0,0,.06);border-radius:22px;box-shadow:var(--shadow);overflow:hidden;display:none;z-index:19}
+.chat.open{display:flex}
+.sidebar{width:225px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:#fbfcfd}
+.brand{height:68px;display:flex;align-items:center;padding:0 18px;border-bottom:1px solid var(--line);font-weight:800}
+.logo{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--primary),#8b5cf6);display:grid;place-items:center;color:white;margin-right:10px;flex:none}
+.section-title{font-size:11px;font-weight:800;color:#98a2b3;padding:14px 16px 8px;text-transform:uppercase;letter-spacing:.6px}
+.rooms{padding:0 8px;overflow:auto;flex:1}
+.room{display:flex;align-items:center;gap:10px;padding:10px;border-radius:11px;cursor:pointer;margin-bottom:2px}
+.room:hover,.room.active{background:#eef2ff}
+.room-icon{width:34px;height:34px;border-radius:10px;background:#eef0f4;display:grid;place-items:center;flex:none}
+.room.active .room-icon{background:#e0e7ff}
+.room-name{font-size:14px;font-weight:650}
+.room-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.profile{border-top:1px solid var(--line);padding:12px;display:flex;align-items:center;gap:9px}
+.profile .avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:white;font-weight:750;font-size:12px;flex:none;background:var(--primary)}
+.profile-text{flex:1;min-width:0}.profile-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.profile-status{font-size:11px}
+.profile-status.on{color:#22a06b}.profile-status.off{color:#c53030}
+.icon-btn{width:35px;height:35px;border:0;background:#f5f6f8;border-radius:10px;cursor:pointer;color:#667085;flex:none}
+.icon-btn:hover{background:#eceff3}
+
+/* main */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.header{height:68px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 18px;gap:10px}
+.header-icon{width:38px;height:38px;border-radius:11px;background:#eef2ff;display:grid;place-items:center;flex:none}
+.header-title{font-weight:800;font-size:15px}.header-sub{font-size:11px;color:#22a06b;margin-top:2px}
+.header-sub.off{color:#c53030}
+.header-actions{margin-left:auto;display:flex;gap:7px}
+.messages{flex:1;overflow:auto;padding:18px 20px;background:#fff}
+.date{text-align:center;font-size:11px;color:#98a2b3;margin:4px 0 18px}
+.msg{display:flex;gap:9px;margin:0 0 16px;max-width:78%}
+.msg.me{margin-left:auto;flex-direction:row-reverse}
+.msg .avatar{width:32px;height:32px;font-size:11px;border-radius:50%;display:grid;place-items:center;color:white;font-weight:750;flex:none;background:var(--primary2)}
+.msg-content{min-width:0}
+.meta{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.msg.me .meta{justify-content:flex-end}
+.meta b{font-size:12px}.meta span{font-size:10px;color:#a0a8b3}
+.bubble{background:var(--bubble);padding:10px 12px;border-radius:5px 14px 14px 14px;font-size:13px;line-height:1.5;word-wrap:break-word;white-space:pre-wrap}
+.msg.me .bubble{background:var(--primary);color:#fff;border-radius:14px 5px 14px 14px}
+.typing{font-size:11px;color:#98a2b3;padding:0 20px 7px;min-height:16px}
+.composer{border-top:1px solid var(--line);padding:11px 13px;background:#fff}
+.composer-box{border:1px solid #dfe4ea;border-radius:14px;padding:8px 9px;display:flex;align-items:flex-end;gap:7px;background:#fafbfc}
+.composer textarea{border:0;background:transparent;outline:0;resize:none;flex:1;font:inherit;font-size:13px;min-height:22px;max-height:90px}
+.composer textarea:disabled{opacity:.5}
+.send{width:36px;height:36px;border:0;border-radius:10px;background:var(--primary);color:#fff;cursor:pointer;flex:none}
+.send:disabled{opacity:.4;cursor:not-allowed}
+.empty{height:100%;display:grid;place-items:center;text-align:center;color:var(--muted);padding:20px}
+.empty-icon{font-size:42px;margin-bottom:8px}
+
+/* settings modal */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:30}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:18px;padding:26px;width:360px;max-width:90vw;box-shadow:var(--shadow)}
+.modal h3{margin:0 0 6px;font-size:18px}
+.modal p{margin:0 0 16px;color:var(--muted);font-size:13px;line-height:1.5}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:650;margin-bottom:5px;color:#475269}
+.field input{width:100%;border:1px solid #dfe4ea;border-radius:10px;padding:10px 11px;font:inherit;font-size:13px;outline:0}
+.field input:focus{border-color:var(--primary)}
+.modal-actions{display:flex;gap:8px;margin-top:18px}
+.btn{flex:1;border:0;border-radius:10px;padding:11px;font-weight:650;font-size:13px;cursor:pointer}
+.btn.primary{background:var(--primary);color:#fff}
+.btn.ghost{background:#f1f3f5;color:#374151}
+.modal-error{color:#c53030;font-size:12px;margin-top:8px;display:none}
+
+/* responsive */
+@media(max-width:800px){
+ .chat{right:10px;left:10px;bottom:82px;width:auto;height:calc(100vh - 105px);border-radius:18px}
+ .sidebar{width:200px}
+}
+@media(max-width:600px){
+ .sidebar{width:66px}.brand span,.room-name,.room-sub,.section-title,.profile-text{display:none}
+ .brand{justify-content:center;padding:0}.logo{margin:0}.rooms{padding:0 10px}.room{justify-content:center}
+ .profile{justify-content:center}.header{padding:0 12px}.messages{padding:15px 12px}
+ .msg{max-width:88%}
+ .launcher{right:17px;bottom:17px}
+}
+</style>
+</head>
+<body>
+
+<div class="demo">
+  <div class="card">
+    <div class="badge">CHAT PLUGIN • KẾT NỐI BACKEND THỰC</div>
+    <h1>Website Community Chat</h1>
+    <p>Nhấn nút chat ở góc phải để trải nghiệm. Lần đầu mở, bạn cần nhập URL backend (Render) trong phần Cài đặt.</p>
+  </div>
+</div>
+
+<button class="launcher" id="launcher" aria-label="Mở chat">
+  <span id="launcherIcon">💬</span>
+  <span class="unread" id="unread">0</span>
+</button>
+
+<div class="chat" id="chat">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">✦</div><span>Community Chat</span></div>
+
+    <div class="section-title">Phòng chat</div>
+    <div class="rooms" id="rooms"></div>
+
+    <div class="profile">
+      <div class="avatar" id="myAvatar">?</div>
+      <div class="profile-text"><div class="profile-name" id="myName">Khách</div><div class="profile-status off" id="connStatus">● Chưa kết nối</div></div>
+      <button class="icon-btn" id="settingsBtn" title="Cài đặt">⚙</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="header">
+      <div class="header-icon" id="headerIcon">💬</div>
+      <div>
+        <div class="header-title" id="headerTitle">Chưa chọn phòng</div>
+        <div class="header-sub off" id="headerSub">Chưa kết nối backend</div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="refreshBtn" title="Làm mới">↻</button>
+      </div>
+    </header>
+
+    <section class="messages" id="messages">
+      <div class="empty">
+        <div class="empty-icon">🔌</div>
+        <div>Vui lòng cấu hình backend trong phần Cài đặt (⚙) để bắt đầu chat.</div>
+      </div>
+    </section>
+    <div class="typing" id="typing"></div>
+
+    <div class="composer">
+      <div class="composer-box">
+        <textarea id="input" rows="1" placeholder="Viết tin nhắn..." disabled></textarea>
+        <button class="send" id="send" disabled>➤</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3>Cài đặt kết nối</h3>
+    <p>Nhập URL backend đã deploy trên Render và tên hiển thị của bạn.</p>
+    <div class="field">
+      <label>Backend URL</label>
+      <input id="cfgUrl" placeholder="https://ten-backend.onrender.com">
+    </div>
+    <div class="field">
+      <label>Tên hiển thị</label>
+      <input id="cfgName" placeholder="Vd: Vinh" maxlength="80">
+    </div>
+    <div class="modal-error" id="cfgError">Không kết nối được backend. Kiểm tra URL và CORS (CLIENT_ORIGIN).</div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="cfgCancel">Đóng</button>
+      <button class="btn primary" id="cfgSave">Lưu &amp; kết nối</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- state ---------- */
+let API = localStorage.getItem("chat_backend_url") || "";
+let userId = localStorage.getItem("chat_user_id") || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random());
+localStorage.setItem("chat_user_id", userId);
+let displayName = localStorage.getItem("chat_display_name") || "";
+let WS = null;
+let wsReconnectTimer = null;
+let rooms = [];
+let currentRoomId = null;
+let typingTimeout = null;
+let unreadCount = 0;
+let chatOpen = false;
+
+/* ---------- dom refs ---------- */
+const $ = id => document.getElementById(id);
+const chat = $("chat"), launcher = $("launcher"), launcherIcon = $("launcherIcon"), unreadEl = $("unread");
+const messagesEl = $("messages"), typingEl = $("typing"), input = $("input"), sendBtn = $("send");
+const roomsEl = $("rooms"), headerIcon = $("headerIcon"), headerTitle = $("headerTitle"), headerSub = $("headerSub");
+const overlay = $("overlay"), cfgUrl = $("cfgUrl"), cfgName = $("cfgName"), cfgError = $("cfgError");
+const connStatus = $("connStatus"), myName = $("myName"), myAvatar = $("myAvatar");
+
+function esc(v){ return String(v ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])); }
+function initials(name){ return (name||"?").trim().split(/\s+/).map(w=>w[0]).slice(-2).join("").toUpperCase() || "?"; }
+function normalizeUrl(v){ return v.trim().replace(/\/+$/, ""); }
+
+/* ---------- launcher ---------- */
+launcher.onclick = () => {
+  chatOpen = !chatOpen;
+  chat.classList.toggle("open", chatOpen);
+  if (chatOpen) {
+    unreadCount = 0; updateUnread();
+    launcherIcon.textContent = "×";
+    input.focus();
+    if (!API) openSettings();
+  } else {
+    launcherIcon.textContent = "💬";
+  }
+};
+function updateUnread(){
+  unreadEl.style.display = unreadCount > 0 ? "flex" : "none";
+  unreadEl.textContent = unreadCount > 99 ? "99+" : unreadCount;
+}
+
+/* ---------- settings modal ---------- */
+function openSettings(){
+  cfgUrl.value = API; cfgName.value = displayName;
+  cfgError.style.display = "none";
+  overlay.classList.add("open");
+}
+function closeSettings(){ overlay.classList.remove("open"); }
+$("settingsBtn").onclick = openSettings;
+$("cfgCancel").onclick = closeSettings;
+$("cfgSave").onclick = async () => {
+  const url = normalizeUrl(cfgUrl.value);
+  const name = cfgName.value.trim().slice(0,80);
+  if (!url) { cfgError.textContent = "Vui lòng nhập URL backend."; cfgError.style.display = "block"; return; }
+  if (!name) { cfgError.textContent = "Vui lòng nhập tên hiển thị."; cfgError.style.display = "block"; return; }
+  cfgError.style.display = "none";
+  const prevApi = API;
+  API = url; displayName = name;
+  const ok = await connect();
+  if (!ok) {
+    cfgError.textContent = "Không kết nối được backend. Kiểm tra URL và CORS (CLIENT_ORIGIN).";
+    cfgError.style.display = "block";
+    API = prevApi;
+    return;
+  }
+  localStorage.setItem("chat_backend_url", API);
+  localStorage.setItem("chat_display_name", displayName);
+  closeSettings();
+};
+
+/* ---------- connection ---------- */
+async function connect(){
+  if (!API) return false;
+  try{
+    const r = await fetch(API + "/health");
+    const data = await r.json();
+    if (!r.ok || !data.ok) throw new Error("health check failed");
+    setConnStatus(true);
+    myName.textContent = displayName || "Khách";
+    myAvatar.textContent = initials(displayName);
+    openWS();
+    await loadRooms();
+    return true;
+  }catch(e){
+    setConnStatus(false);
+    return false;
+  }
+}
+function setConnStatus(ok){
+  connStatus.textContent = ok ? "● Đang kết nối" : "● Chưa kết nối";
+  connStatus.className = "profile-status " + (ok ? "on" : "off");
+  headerSub.className = "header-sub" + (ok ? "" : " off");
+  input.disabled = !ok; sendBtn.disabled = !ok;
+}
+
+function openWS(){
+  if (WS) { try{ WS.onclose = null; WS.close(); }catch(e){} }
+  clearTimeout(wsReconnectTimer);
+  WS = new WebSocket(API.replace(/^http/, "ws") + "/ws");
+  WS.onopen = () => { setConnStatus(true); joinCurrentRoom(); };
+  WS.onmessage = e => {
+    let m; try{ m = JSON.parse(e.data); }catch(err){ return; }
+    if (m.type === "message") onIncomingMessage(m);
+    else if (m.type === "typing") onTyping(m);
+    else if (m.type === "presence") onPresence(m);
+    else if (m.type === "error") console.error("Chat error:", m.message);
+  };
+  WS.onclose = () => {
+    setConnStatus(false);
+    wsReconnectTimer = setTimeout(() => { if (API) openWS(); }, 3000);
+  };
+  WS.onerror = () => {};
+}
+function joinCurrentRoom(){
+  if (WS && WS.readyState === 1 && currentRoomId) {
+    WS.send(JSON.stringify({ type: "join", userId, displayName, roomId: currentRoomId }));
+  }
+}
+
+/* ---------- rooms ---------- */
+async function loadRooms(){
+  try{
+    const r = await fetch(API + "/api/rooms");
+    if (!r.ok) throw new Error("rooms error");
+    rooms = await r.json();
+    renderRooms();
+    if (rooms.length && !currentRoomId) selectRoom(rooms[0].id);
+    else if (currentRoomId) selectRoom(currentRoomId);
+  }catch(e){
+    roomsEl.innerHTML = `<div style="padding:12px;font-size:12px;color:var(--muted)">Không tải được danh sách phòng.</div>`;
+  }
+}
+function renderRooms(){
+  roomsEl.innerHTML = rooms.map(r => `
+    <div class="room ${r.id===currentRoomId?"active":""}" data-id="${esc(r.id)}">
+      <div class="room-icon">${esc(r.icon||"💬")}</div>
+      <div><div class="room-name">${esc(r.name)}</div><div class="room-sub">${esc(r.slug)}</div></div>
+    </div>`).join("");
+  roomsEl.querySelectorAll(".room").forEach(el => {
+    el.onclick = () => selectRoom(el.dataset.id);
+  });
+}
+function selectRoom(id){
+  currentRoomId = id;
+  const r = rooms.find(x => x.id === id);
+  roomsEl.querySelectorAll(".room").forEach(x => x.classList.toggle("active", x.dataset.id === id));
+  if (r) {
+    headerIcon.textContent = r.icon || "💬";
+    headerTitle.textContent = r.name;
+  }
+  typingEl.textContent = "";
+  loadMessages(id);
+  joinCurrentRoom();
+}
+$("refreshBtn").onclick = () => { if (API) loadRooms(); };
+
+/* ---------- messages ---------- */
+async function loadMessages(roomId){
+  messagesEl.innerHTML = `<div class="date">Đang tải...</div>`;
+  try{
+    const r = await fetch(API + "/api/rooms/" + roomId + "/messages?limit=50");
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "load error");
+    messagesEl.innerHTML = `<div class="date">Hôm nay</div>`;
+    if (!data.length) {
+      messagesEl.innerHTML += `<div class="empty"><div class="empty-icon">💬</div><div>Chưa có tin nhắn nào. Hãy là người đầu tiên!</div></div>`;
+    } else {
+      data.forEach(m => appendMessage(m, false));
+    }
+    scrollToBottom();
+  }catch(e){
+    messagesEl.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div>Không tải được tin nhắn.</div></div>`;
+  }
+}
+function appendMessage(m, scroll = true){
+  const me = m.user_id === userId;
+  const el = document.createElement("div");
+  el.className = "msg " + (me ? "me" : "");
+  const time = m.created_at ? new Date(m.created_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "";
+  el.innerHTML = `<div class="avatar">${esc(initials(m.display_name))}</div>
+    <div class="msg-content"><div class="meta"><b>${esc(m.display_name || "Khách")}</b><span>${esc(time)}</span></div><div class="bubble"></div></div>`;
+  el.querySelector(".bubble").textContent = m.content;
+  messagesEl.appendChild(el);
+  if (scroll) scrollToBottom();
+}
+function scrollToBottom(){ messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+function onIncomingMessage(m){
+  if (m.room_id === currentRoomId) {
+    appendMessage(m);
+  }
+  if (!chatOpen || m.room_id !== currentRoomId) {
+    if (m.user_id !== userId) { unreadCount++; updateUnread(); }
+  }
+}
+function onTyping(m){
+  if (m.roomId !== currentRoomId || m.userId === userId) return;
+  typingEl.textContent = m.isTyping ? `${m.displayName} đang nhập...` : "";
+}
+function onPresence(m){
+  headerSub.textContent = (m.count || 0) + " người đang online";
+}
+
+/* ---------- composer ---------- */
+function sendMessage(){
+  const text = input.value.trim();
+  if (!text || !WS || WS.readyState !== 1 || !currentRoomId) return;
+  WS.send(JSON.stringify({ type: "send_message", content: text }));
+  input.value = ""; input.style.height = "auto";
+  sendTyping(false);
+}
+sendBtn.onclick = sendMessage;
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+input.addEventListener("input", () => {
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight, 90) + "px";
+  sendTyping(true);
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => sendTyping(false), 1500);
+});
+function sendTyping(isTyping){
+  if (WS && WS.readyState === 1 && currentRoomId) {
+    WS.send(JSON.stringify({ type: "typing", isTyping }));
+  }
+}
+
+/* ---------- boot ---------- */
+if (API && displayName) { connect(); }
+else if (API && !displayName) { openSettings(); }
+</script>
+</body>
+</html>
