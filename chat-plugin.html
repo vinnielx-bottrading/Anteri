@@ -363,8 +363,9 @@ async function postJson(path, body){
   try{
     const res = await fetch(API + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
+    if (!res.ok && !data.error) data.error = `Lỗi máy chủ (mã ${res.status}). Backend có thể chưa deploy code mới hoặc chưa chạy lại schema.sql.`;
     return { ok: res.ok, data };
-  }catch(e){ return { ok: false, data: { error: "Không thể kết nối máy chủ." } }; }
+  }catch(e){ return { ok: false, data: { error: "Không thể kết nối máy chủ. Kiểm tra Backend URL và CORS." } }; }
 }
 
 $("authSubmit").onclick = async () => {

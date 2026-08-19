@@ -41,6 +41,7 @@ Tạo **New Web Service**, trỏ vào repo, cấu hình:
 | Environment: `DATABASE_URL` | connection string Neon (bước 1) |
 | Environment: `CLIENT_ORIGIN` | domain frontend thật, vd `https://yourdomain.com` (dùng `*` tạm thời lúc test) |
 | Environment: `SESSION_SECRET` | một chuỗi ngẫu nhiên dài, tự đặt cố định (vd 32+ ký tự bất kỳ) — dùng để ký phiên đăng nhập của khách. Nếu không đặt, khách sẽ bị đăng xuất mỗi khi Render restart service. |
+| Environment: `ADMIN_TOKEN` | một chuỗi ngẫu nhiên dài khác (khác với SESSION_SECRET), dùng để bảo vệ tab "Users" và tính năng tạo phòng trong `admin.html` — nơi hiển thị số điện thoại khách. Nếu không đặt, các API admin sẽ tự động bị vô hiệu hoá. |
 
 Sau khi deploy xong sẽ có URL dạng `https://ten-backend.onrender.com`.
 
@@ -53,7 +54,7 @@ Khách vào chat lần đầu phải đăng ký: **họ tên, số điện tho�
 ## 5. Test nhanh (chạy độc lập, chưa cần nhúng)
 
 - Mở `chat-plugin.html` (double-click hoặc host tĩnh ở đâu cũng được) → bấm nút chat góc phải → lần đầu sẽ hiện màn hình đăng ký/đăng nhập.
-- Mở `admin.html` → nhập URL backend → **Kết nối** để xem danh sách phòng, tin nhắn và log WebSocket theo thời gian thực.
+- Mở `admin.html` → tab **Settings** → nhập Backend URL (và Admin Token nếu muốn xem tab Users / tạo phòng) → **Kết nối**.
 
 ## 6. Nhúng plugin lên website khác (dùng thực tế)
 

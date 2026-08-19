@@ -6,161 +6,308 @@
 <title>Community Chat — Admin</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:#f5f7fb;color:#18212f}
-button,input{font:inherit}.layout{display:flex;min-height:100vh}.side{width:245px;background:#111827;color:#fff;padding:20px 14px}.brand{font-size:18px;font-weight:800;padding:10px 12px 25px}.brand span{color:#818cf8}.nav{display:flex;gap:11px;align-items:center;padding:12px;border-radius:10px;color:#aeb7c7;cursor:pointer;margin:3px 0}.nav.active,.nav:hover{background:#202938;color:#fff}.main{flex:1;padding:28px;min-width:0}.top{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:25px}.top h1{margin:0;font-size:27px}.top p{margin:5px 0 0;color:#7a8595}.status{display:flex;align-items:center;gap:8px;padding:9px 13px;border-radius:999px;background:#fff;border:1px solid #e6eaf0;font-size:13px}.led{width:9px;height:9px;border-radius:50%;background:#ef4444}.led.ok{background:#22c55e}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px}.stat{background:#fff;border:1px solid #e8ebf0;border-radius:15px;padding:18px}.stat .label{font-size:12px;color:#7b8794}.stat .num{font-size:28px;font-weight:800;margin-top:8px}.card{background:#fff;border:1px solid #e8ebf0;border-radius:15px;padding:18px;margin-bottom:18px}.card h2{font-size:16px;margin:0 0 15px}.toolbar{display:flex;gap:9px;flex-wrap:wrap}.toolbar input{flex:1;min-width:220px;padding:10px 12px;border:1px solid #dfe4ea;border-radius:9px;outline:none}.btn{border:0;border-radius:9px;padding:10px 14px;background:#4f46e5;color:white;cursor:pointer}.btn.secondary{background:#eef0f4;color:#374151}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:12px;border-bottom:1px solid #edf0f3;white-space:nowrap}th{font-size:11px;color:#8a94a3;text-transform:uppercase}.room{display:flex;align-items:center;gap:10px}.roomicon{width:34px;height:34px;border-radius:9px;background:#eef2ff;display:grid;place-items:center}.empty{text-align:center;color:#8993a2;padding:30px}.log{background:#0f172a;color:#cbd5e1;border-radius:10px;padding:13px;font:12px Consolas,monospace;max-height:180px;overflow:auto;white-space:pre-wrap}.config{display:none}.config.show{display:block}@media(max-width:900px){.side{width:70px}.brand{font-size:0}.nav span{display:none}.grid{grid-template-columns:repeat(2,1fr)}.main{padding:18px}}@media(max-width:550px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+button,input{font:inherit}.layout{display:flex;min-height:100vh}
+.side{width:245px;background:#111827;color:#fff;padding:20px 14px;flex:none}
+.brand{font-size:18px;font-weight:800;padding:10px 12px 25px}.brand span{color:#818cf8}
+.nav{display:flex;gap:11px;align-items:center;padding:12px;border-radius:10px;color:#aeb7c7;cursor:pointer;margin:3px 0}
+.nav.active,.nav:hover{background:#202938;color:#fff}
+.main{flex:1;padding:28px;min-width:0}
+.top{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:25px}
+.top h1{margin:0;font-size:27px}.top p{margin:5px 0 0;color:#7a8595}
+.status{display:flex;align-items:center;gap:8px;padding:9px 13px;border-radius:999px;background:#fff;border:1px solid #e6eaf0;font-size:13px}
+.led{width:9px;height:9px;border-radius:50%;background:#ef4444}.led.ok{background:#22c55e}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px}
+.stat{background:#fff;border:1px solid #e8ebf0;border-radius:15px;padding:18px}
+.stat .label{font-size:12px;color:#7b8794}.stat .num{font-size:28px;font-weight:800;margin-top:8px}
+.card{background:#fff;border:1px solid #e8ebf0;border-radius:15px;padding:18px;margin-bottom:18px}
+.card h2{font-size:16px;margin:0 0 15px}.card p.hint{color:#7b8794;font-size:12.5px;margin:-8px 0 15px;line-height:1.5}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap}
+.toolbar input,.toolbar select{flex:1;min-width:200px;padding:10px 12px;border:1px solid #dfe4ea;border-radius:9px;outline:none}
+.btn{border:0;border-radius:9px;padding:10px 14px;background:#4f46e5;color:white;cursor:pointer}
+.btn.secondary{background:#eef0f4;color:#374151}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:12px;border-bottom:1px solid #edf0f3;white-space:nowrap}
+th{font-size:11px;color:#8a94a3;text-transform:uppercase}
+.room{display:flex;align-items:center;gap:10px}
+.roomicon{width:34px;height:34px;border-radius:9px;background:#eef2ff;display:grid;place-items:center}
+.empty{text-align:center;color:#8993a2;padding:30px}
+.log{background:#0f172a;color:#cbd5e1;border-radius:10px;padding:13px;font:12px Consolas,monospace;max-height:220px;overflow:auto;white-space:pre-wrap}
+.config{display:none}.config.show{display:block}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:650;margin-bottom:6px;color:#475269}
+.field input{width:100%;padding:10px 12px;border:1px solid #dfe4ea;border-radius:9px;outline:none}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:650}
+.badge.on{background:#dcfce7;color:#15803d}.badge.off{background:#fee2e2;color:#b91c1c}
+.view{display:none}.view.active{display:block}
+@media(max-width:900px){.side{width:70px}.brand{font-size:0}.nav span{display:none}.grid{grid-template-columns:repeat(2,1fr)}.main{padding:18px}}
+@media(max-width:550px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
 <body>
 <div class="layout">
 <aside class="side">
   <div class="brand">✦ <span>Community</span> Chat</div>
-  <div class="nav active">▦ <span>Dashboard</span></div>
-  <div class="nav">👥 <span>Users</span></div>
-  <div class="nav">💬 <span>Rooms</span></div>
-  <div class="nav">📝 <span>Messages</span></div>
-  <div class="nav">⚙ <span>Settings</span></div>
+  <div class="nav active" data-view="dashboard">▦ <span>Dashboard</span></div>
+  <div class="nav" data-view="users">👥 <span>Users</span></div>
+  <div class="nav" data-view="rooms">💬 <span>Rooms</span></div>
+  <div class="nav" data-view="messages">📝 <span>Messages</span></div>
+  <div class="nav" data-view="settings">⚙ <span>Settings</span></div>
 </aside>
 
 <main class="main">
   <div class="top">
-    <div><h1>Admin Dashboard</h1><p>Quản lý Community Chat</p></div>
+    <div><h1 id="viewTitle">Admin Dashboard</h1><p id="viewSubtitle">Quản lý Community Chat</p></div>
     <div class="status"><i class="led" id="led"></i><span id="status">Chưa kết nối</span></div>
   </div>
 
-  <section class="grid">
-    <div class="stat"><div class="label">NGƯỜI ĐANG ONLINE</div><div class="num" id="online">0</div></div>
-    <div class="stat"><div class="label">PHÒNG CHAT</div><div class="num" id="rooms">0</div></div>
-    <div class="stat"><div class="label">TIN NHẮN ĐANG XEM</div><div class="num" id="messageCount">0</div></div>
-    <div class="stat"><div class="label">BACKEND</div><div class="num" id="backend">—</div></div>
+  <!-- ================= DASHBOARD ================= -->
+  <section class="view active" id="view-dashboard">
+    <section class="grid">
+      <div class="stat"><div class="label">NGƯỜI ĐANG ONLINE</div><div class="num" id="online">0</div></div>
+      <div class="stat"><div class="label">PHÒNG CHAT</div><div class="num" id="roomsCount">0</div></div>
+      <div class="stat"><div class="label">KHÁCH ĐÃ ĐĂNG KÝ</div><div class="num" id="usersCount">—</div></div>
+      <div class="stat"><div class="label">BACKEND</div><div class="num" id="backendStat">—</div></div>
+    </section>
+    <section class="card">
+      <h2>WebSocket Log</h2>
+      <div class="log" id="log">Chưa có kết nối.</div>
+    </section>
   </section>
 
-  <section class="card">
-    <h2>Kết nối Backend</h2>
-    <div class="toolbar">
-      <input id="backendUrl" placeholder="https://your-chat-backend.onrender.com">
-      <button class="btn" onclick="connect()">Kết nối</button>
-      <button class="btn secondary" onclick="loadAll()">↻ Làm mới</button>
-    </div>
-    <div class="config" id="config" style="margin-top:12px;color:#697586;font-size:12px">
-      WebSocket: <span id="wsUrl">—</span>
-    </div>
+  <!-- ================= USERS ================= -->
+  <section class="view" id="view-users">
+    <section class="card">
+      <h2>Khách đã đăng ký</h2>
+      <p class="hint">Yêu cầu Admin Token (cấu hình ở tab Settings) vì danh sách này chứa số điện thoại — dữ liệu nhạy cảm, không công khai như các API khác.</p>
+      <div class="toolbar" style="margin-bottom:14px">
+        <button class="btn secondary" onclick="loadUsers()">↻ Tải lại</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Họ tên</th><th>Biệt danh</th><th>Số điện thoại</th><th>Đăng ký lúc</th><th>Hoạt động gần nhất</th></tr></thead>
+        <tbody id="userTable"></tbody></table>
+      </div>
+    </section>
   </section>
 
-  <section class="card">
-    <h2>Phòng chat</h2>
-    <div class="table-wrap">
-      <table><thead><tr><th>Phòng</th><th>Slug</th><th>ID</th><th>Trạng thái</th></tr></thead>
-      <tbody id="roomTable"></tbody></table>
-    </div>
+  <!-- ================= ROOMS ================= -->
+  <section class="view" id="view-rooms">
+    <section class="card">
+      <h2>Tạo phòng mới</h2>
+      <p class="hint">Cần Admin Token. Slug chỉ nên gồm chữ thường, số và dấu gạch ngang.</p>
+      <div class="toolbar">
+        <input id="newRoomName" placeholder="Tên phòng, vd: Ẩm thực">
+        <input id="newRoomSlug" placeholder="slug, vd: food">
+        <input id="newRoomIcon" placeholder="Icon (emoji), vd: 🍜" style="max-width:110px">
+        <button class="btn" onclick="createRoom()">+ Tạo phòng</button>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Danh sách phòng</h2>
+      <div class="table-wrap">
+        <table><thead><tr><th>Phòng</th><th>Slug</th><th>ID</th><th>Trạng thái</th></tr></thead>
+        <tbody id="roomTable"></tbody></table>
+      </div>
+    </section>
   </section>
 
-  <section class="card">
-    <h2>Tin nhắn gần đây</h2>
-    <div class="toolbar" style="margin-bottom:10px">
-      <select id="roomSelect" style="padding:10px;border:1px solid #dfe4ea;border-radius:9px"></select>
-      <button class="btn secondary" onclick="loadMessages()">Tải tin nhắn</button>
-    </div>
-    <div class="table-wrap">
-      <table><thead><tr><th>Thời gian</th><th>Người gửi</th><th>Nội dung</th><th>Room</th></tr></thead>
-      <tbody id="messageTable"></tbody></table>
-    </div>
+  <!-- ================= MESSAGES ================= -->
+  <section class="view" id="view-messages">
+    <section class="card">
+      <h2>Tin nhắn theo phòng</h2>
+      <div class="toolbar" style="margin-bottom:10px">
+        <select id="roomSelect"></select>
+        <button class="btn secondary" onclick="loadMessages()">Tải tin nhắn</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Thời gian</th><th>Người gửi</th><th>Nội dung</th><th>Room</th></tr></thead>
+        <tbody id="messageTable"></tbody></table>
+      </div>
+    </section>
   </section>
 
-  <section class="card">
-    <h2>WebSocket Log</h2>
-    <div class="log" id="log">Chưa có kết nối.</div>
+  <!-- ================= SETTINGS ================= -->
+  <section class="view" id="view-settings">
+    <section class="card">
+      <h2>Kết nối Backend</h2>
+      <div class="field">
+        <label>Backend URL</label>
+        <input id="backendUrl" placeholder="https://your-chat-backend.onrender.com">
+      </div>
+      <div class="field">
+        <label>Admin Token <span style="font-weight:400;color:#9aa4b2">(chỉ cần cho tab Users / tạo phòng ở tab Rooms)</span></label>
+        <input id="adminToken" type="password" placeholder="Trùng với biến ADMIN_TOKEN trên Render">
+      </div>
+      <div class="toolbar">
+        <button class="btn" onclick="connect()">Kết nối</button>
+        <button class="btn secondary" onclick="loadAll()">↻ Làm mới toàn bộ</button>
+      </div>
+      <div class="config" id="config" style="margin-top:12px;color:#697586;font-size:12px">
+        WebSocket: <span id="wsUrl">—</span>
+      </div>
+    </section>
   </section>
 </main>
 </div>
 
 <script>
 let API="";
+let ADMIN_TOKEN="";
 let WS=null;
 let roomList=[];
 
 const $=id=>document.getElementById(id);
+function esc(v){ return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])); }
+function normalize(v){ return v.trim().replace(/\/+$/,""); }
 function log(x){
- const el=$("log"), t=new Date().toLocaleTimeString("vi-VN");
- el.textContent=`[${t}] ${x}\n`+el.textContent;
+  const el=$("log"), t=new Date().toLocaleTimeString("vi-VN");
+  el.textContent = `[${t}] ${x}\n` + el.textContent;
 }
-function normalize(v){return v.trim().replace(/\/+$/,"");}
 function setStatus(ok,text){
- $("led").className="led"+(ok?" ok":"");
- $("status").textContent=text;
- $("backend").textContent=ok?"OK":"—";
+  $("led").className = "led" + (ok ? " ok" : "");
+  $("status").textContent = text;
+  $("backendStat").textContent = ok ? "OK" : "—";
 }
+
+/* ---------- điều hướng sidebar ---------- */
+const VIEW_META = {
+  dashboard: ["Admin Dashboard","Quản lý Community Chat"],
+  users: ["Người dùng","Danh sách khách đã đăng ký tài khoản chat"],
+  rooms: ["Phòng chat","Quản lý và tạo phòng chat"],
+  messages: ["Tin nhắn","Xem tin nhắn theo từng phòng"],
+  settings: ["Cài đặt","Cấu hình kết nối backend và admin token"],
+};
+document.querySelectorAll(".nav").forEach(el => {
+  el.onclick = () => {
+    const view = el.dataset.view;
+    document.querySelectorAll(".nav").forEach(x => x.classList.toggle("active", x === el));
+    document.querySelectorAll(".view").forEach(x => x.classList.toggle("active", x.id === "view-" + view));
+    $("viewTitle").textContent = VIEW_META[view][0];
+    $("viewSubtitle").textContent = VIEW_META[view][1];
+    if (view === "users") loadUsers();
+  };
+});
+
+/* ---------- kết nối backend ---------- */
 async function connect(){
- let v=normalize($("backendUrl").value);
- if(!v){alert("Nhập URL backend Render trước.");return}
- API=v;
- localStorage.setItem("chat_backend_url",API);
- $("wsUrl").textContent=API.replace(/^http/,"ws")+"/ws";
- $("config").classList.add("show");
- try{
-   const r=await fetch(API+"/health");
-   const data=await r.json();
-   if(!r.ok)throw new Error(data.error||"Health check failed");
-   setStatus(true,"Backend online");
-   log("REST connected: "+API);
-   openWS();
-   await loadAll();
- }catch(e){
-   setStatus(false,"Không kết nối được");
-   log("ERROR: "+e.message);
-   alert("Không kết nối được backend. Kiểm tra URL Render và CORS.");
- }
+  const v = normalize($("backendUrl").value);
+  if (!v) { alert("Nhập URL backend Render trước."); return; }
+  API = v;
+  ADMIN_TOKEN = $("adminToken").value.trim();
+  localStorage.setItem("chat_backend_url", API);
+  localStorage.setItem("chat_admin_token", ADMIN_TOKEN);
+  $("wsUrl").textContent = API.replace(/^http/,"ws") + "/ws";
+  $("config").classList.add("show");
+  try{
+    const r = await fetch(API + "/health");
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Health check failed");
+    setStatus(true, "Backend online");
+    log("REST connected: " + API);
+    openWS();
+    await loadAll();
+  }catch(e){
+    setStatus(false, "Không kết nối được");
+    log("ERROR: " + e.message);
+    alert("Không kết nối được backend. Kiểm tra URL Render và CORS.");
+  }
 }
 function openWS(){
- if(WS)try{WS.close()}catch(e){}
- WS=new WebSocket(API.replace(/^http/,"ws")+"/ws");
- WS.onopen=()=>log("WebSocket connected");
- WS.onmessage=e=>{
-   const m=JSON.parse(e.data);
-   if(m.type==="presence"){ $("online").textContent=m.count||0; log("Online: "+(m.count||0));}
-   if(m.type==="message"){log("New message: "+m.display_name+": "+m.content); loadMessages();}
-   if(m.type==="error")log("ERROR: "+m.message);
- };
- WS.onclose=()=>{log("WebSocket closed");};
- WS.onerror=()=>log("WebSocket error");
+  if (WS) try { WS.close(); } catch(e) {}
+  WS = new WebSocket(API.replace(/^http/,"ws") + "/ws");
+  WS.onopen = () => log("WebSocket connected");
+  WS.onmessage = e => {
+    const m = JSON.parse(e.data);
+    if (m.type === "presence") { $("online").textContent = m.count || 0; log("Online: " + (m.count||0)); }
+    if (m.type === "message") { log("New message: " + m.display_name + ": " + m.content); if ($("view-messages").classList.contains("active")) loadMessages(); }
+    if (m.type === "error") log("ERROR: " + m.message);
+  };
+  WS.onclose = () => log("WebSocket closed");
+  WS.onerror = () => log("WebSocket error");
 }
+
+/* ---------- rooms + messages (public API) ---------- */
 async function loadAll(){
- if(!API){return}
- try{
-  const r=await fetch(API+"/api/rooms");
-  if(!r.ok)throw new Error("Không tải được rooms");
-  roomList=await r.json();
-  $("rooms").textContent=roomList.length;
-  renderRooms();
-  const select=$("roomSelect");select.innerHTML="";
-  roomList.forEach(x=>{let o=document.createElement("option");o.value=x.id;o.textContent=x.icon+" "+x.name;select.appendChild(o)});
-  if(roomList.length)await loadMessages();
- }catch(e){log("ERROR: "+e.message)}
+  if (!API) return;
+  try{
+    const r = await fetch(API + "/api/rooms");
+    if (!r.ok) throw new Error("Không tải được rooms");
+    roomList = await r.json();
+    $("roomsCount").textContent = roomList.length;
+    renderRooms();
+    const select = $("roomSelect"); select.innerHTML = "";
+    roomList.forEach(x => { const o = document.createElement("option"); o.value = x.id; o.textContent = x.icon + " " + x.name; select.appendChild(o); });
+    if (roomList.length) await loadMessages();
+  }catch(e){ log("ERROR: " + e.message); }
 }
 function renderRooms(){
- $("roomTable").innerHTML=roomList.map(r=>`<tr>
- <td><div class="room"><div class="roomicon">${esc(r.icon||"💬")}</div><b>${esc(r.name)}</b></div></td>
- <td>${esc(r.slug)}</td><td>${esc(r.id)}</td><td><span style="color:#22a06b">● Active</span></td>
- </tr>`).join("")||`<tr><td colspan="4" class="empty">Chưa có phòng</td></tr>`;
+  $("roomTable").innerHTML = roomList.map(r => `<tr>
+    <td><div class="room"><div class="roomicon">${esc(r.icon||"💬")}</div><b>${esc(r.name)}</b></div></td>
+    <td>${esc(r.slug)}</td><td>${esc(r.id)}</td><td><span style="color:#22a06b">● Active</span></td>
+  </tr>`).join("") || `<tr><td colspan="4" class="empty">Chưa có phòng</td></tr>`;
+}
+async function createRoom(){
+  if (!API) { alert("Kết nối backend trước (tab Settings)."); return; }
+  if (!ADMIN_TOKEN) { alert("Nhập Admin Token ở tab Settings trước."); return; }
+  const name = $("newRoomName").value.trim();
+  const slug = $("newRoomSlug").value.trim();
+  const icon = $("newRoomIcon").value.trim() || "💬";
+  if (!name || !slug) { alert("Nhập đủ tên phòng và slug."); return; }
+  try{
+    const r = await fetch(API + "/api/admin/rooms", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-token": ADMIN_TOKEN },
+      body: JSON.stringify({ name, slug, icon })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Không thể tạo phòng.");
+    $("newRoomName").value = ""; $("newRoomSlug").value = ""; $("newRoomIcon").value = "";
+    log("Đã tạo phòng: " + name);
+    await loadAll();
+  }catch(e){ alert(e.message); log("ERROR: " + e.message); }
 }
 async function loadMessages(){
- const id=$("roomSelect").value;if(!id||!API)return;
- try{
-  const r=await fetch(API+"/api/rooms/"+id+"/messages?limit=100");
-  const data=await r.json();
-  if(!r.ok)throw new Error(data.error||"Không tải được");
-  $("messageCount").textContent=data.length;
-  $("messageTable").innerHTML=data.map(m=>`<tr>
-   <td>${new Date(m.created_at).toLocaleString("vi-VN")}</td>
-   <td><b>${esc(m.display_name||"Guest")}</b></td>
-   <td style="max-width:450px;white-space:normal">${esc(m.content)}</td>
-   <td>${esc(m.room_id)}</td>
-  </tr>`).join("")||`<tr><td colspan="4" class="empty">Chưa có tin nhắn</td></tr>`;
- }catch(e){log("ERROR: "+e.message)}
+  const id = $("roomSelect").value; if (!id || !API) return;
+  try{
+    const r = await fetch(API + "/api/rooms/" + id + "/messages?limit=100");
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Không tải được");
+    $("messageTable").innerHTML = data.map(m => `<tr>
+      <td>${new Date(m.created_at).toLocaleString("vi-VN")}</td>
+      <td><b>${esc(m.display_name||"Guest")}</b></td>
+      <td style="max-width:450px;white-space:normal">${esc(m.content)}</td>
+      <td>${esc(m.room_id)}</td>
+    </tr>`).join("") || `<tr><td colspan="4" class="empty">Chưa có tin nhắn</td></tr>`;
+  }catch(e){ log("ERROR: " + e.message); }
 }
-function esc(v){
- return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+
+/* ---------- users (admin API — cần token) ---------- */
+async function loadUsers(){
+  if (!API) { $("userTable").innerHTML = `<tr><td colspan="5" class="empty">Kết nối backend ở tab Settings trước.</td></tr>`; return; }
+  if (!ADMIN_TOKEN) { $("userTable").innerHTML = `<tr><td colspan="5" class="empty">Nhập Admin Token ở tab Settings để xem danh sách này.</td></tr>`; return; }
+  $("userTable").innerHTML = `<tr><td colspan="5" class="empty">Đang tải...</td></tr>`;
+  try{
+    const r = await fetch(API + "/api/admin/users", { headers: { "x-admin-token": ADMIN_TOKEN } });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Không thể tải danh sách người dùng.");
+    $("usersCount").textContent = data.length;
+    $("userTable").innerHTML = data.map(u => `<tr>
+      <td>${esc(u.full_name || "—")}</td>
+      <td><b>${esc(u.nickname || "—")}</b></td>
+      <td>${esc(u.phone || "—")}</td>
+      <td>${u.created_at ? new Date(u.created_at).toLocaleString("vi-VN") : "—"}</td>
+      <td>${u.last_seen_at ? new Date(u.last_seen_at).toLocaleString("vi-VN") : "—"}</td>
+    </tr>`).join("") || `<tr><td colspan="5" class="empty">Chưa có khách nào đăng ký</td></tr>`;
+  }catch(e){
+    $("userTable").innerHTML = `<tr><td colspan="5" class="empty">${esc(e.message)}</td></tr>`;
+    log("ERROR: " + e.message);
+  }
 }
-$("backendUrl").value=localStorage.getItem("chat_backend_url")||"";
-if($("backendUrl").value) connect();
+
+/* ---------- khởi động ---------- */
+$("backendUrl").value = localStorage.getItem("chat_backend_url") || "";
+$("adminToken").value = localStorage.getItem("chat_admin_token") || "";
+if ($("backendUrl").value) connect();
 </script>
 </body>
 </html>
