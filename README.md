@@ -1,24 +1,12 @@
-# Community Chat Backend v1
-Node.js + Express + WebSocket + Neon PostgreSQL.
+# Community Chat v2
 
-## Local
-npm install
-copy .env.example to .env and set DATABASE_URL.
-Run schema.sql in Neon SQL Editor.
-npm start
+1. Neon: mở SQL Editor và chạy `backend/schema.sql`.
+2. GitHub: upload toàn bộ thư mục.
+3. Render: New Web Service.
+   - Build: `npm install`
+   - Start: `npm start`
+   - Environment: `DATABASE_URL` = connection string Neon; `CLIENT_ORIGIN` = `*` tạm thời.
+4. Mở `frontend/chat-plugin.html`, nhập URL Render, ví dụ `https://ten-backend.onrender.com`.
+5. `frontend/admin.html` dùng cùng URL để xem phòng và tin nhắn.
 
-## Render
-Create Web Service from this repo.
-Build: `npm install`
-Start: `npm start`
-Environment:
-`DATABASE_URL` = Neon pooled connection string
-`CLIENT_ORIGIN` = your frontend URL
-
-Production WebSocket:
-`wss://YOUR-SERVICE.onrender.com/ws`
-
-Frontend sends:
-`{"type":"join","displayName":"Nguyen Vinh","roomId":"00000000-0000-0000-0000-000000000001"}`
-then:
-`{"type":"send_message","content":"Xin chào!"}`
+Không commit DATABASE_URL thật vào GitHub. Vì connection string đã được chia sẻ công khai, hãy đổi password Neon trước khi chạy production.
