@@ -12,7 +12,8 @@ Chat plugin nhúng lên website + trang quản trị, backend Node.js (Express +
 │   ├── package.json
 │   ├── schema.sql        # Chạy 1 lần trong Neon SQL Editor
 │   └── env.example       # Copy thành .env khi chạy local
-├── chat-plugin.html      # Widget chat nhúng lên website (kết nối backend qua REST + WebSocket)
+├── chat-plugin.html      # Widget chat (kết nối backend qua REST + WebSocket, hỗ trợ cả chạy độc lập lẫn nhúng qua embed.js)
+├── embed.js              # Script loader — dán 1 dòng <script> vào website khác để hiện nút chat
 ├── admin.html            # Trang quản trị: xem phòng, tin nhắn, log WebSocket
 └── README.md
 ```
@@ -39,13 +40,36 @@ Tạo **New Web Service**, trỏ vào repo, cấu hình:
 | Start Command | `npm start` |
 | Environment: `DATABASE_URL` | connection string Neon (bước 1) |
 | Environment: `CLIENT_ORIGIN` | domain frontend thật, vd `https://yourdomain.com` (dùng `*` tạm thời lúc test) |
+| Environment: `SESSION_SECRET` | một chuỗi ngẫu nhiên dài, tự đặt cố định (vd 32+ ký tự bất kỳ) — dùng để ký phiên đăng nhập của khách. Nếu không đặt, khách sẽ bị đăng xuất mỗi khi Render restart service. |
 
 Sau khi deploy xong sẽ có URL dạng `https://ten-backend.onrender.com`.
 
-## 4. Frontend
+⚠️ **Nếu bạn đã deploy trước đó và mới cập nhật code này**: vào lại Neon SQL Editor, chạy lại toàn bộ `backend/schema.sql` — file này an toàn để chạy nhiều lần, sẽ tự thêm các cột mới (họ tên, số điện thoại, mật khẩu) mà không xoá dữ liệu cũ.
 
-- Mở `chat-plugin.html` (double-click hoặc host tĩnh ở đâu cũng được) → bấm nút chat góc phải → mở **Cài đặt (⚙)** → nhập URL backend Render và tên hiển thị → **Lưu & kết nối**. Cấu hình được lưu trong `localStorage` của trình duyệt.
-- Mở `admin.html` → nhập cùng URL backend đó → **Kết nối** để xem danh sách phòng, tin nhắn và log WebSocket theo thời gian thực.
+## 4. Đăng ký / đăng nhập khách (mới)
+
+Khách vào chat lần đầu phải đăng ký: **họ tên, số điện thoại, biệt danh, mật khẩu**. Lần sau quay lại (trong vòng 4 giờ, cùng trình duyệt) sẽ tự đăng nhập lại không cần nhập gì; nếu quá 4 giờ hoặc đổi thiết bị, cần đăng nhập bằng **số điện thoại + mật khẩu**. Chi tiết API xem `backend/README.md`.
+
+## 5. Test nhanh (chạy độc lập, chưa cần nhúng)
+
+- Mở `chat-plugin.html` (double-click hoặc host tĩnh ở đâu cũng được) → bấm nút chat góc phải → lần đầu sẽ hiện màn hình đăng ký/đăng nhập.
+- Mở `admin.html` → nhập URL backend → **Kết nối** để xem danh sách phòng, tin nhắn và log WebSocket theo thời gian thực.
+
+## 6. Nhúng plugin lên website khác (dùng thực tế)
+
+1. Host `chat-plugin.html` + `embed.js` **cùng một thư mục** ở đâu đó công khai — GitHub Pages, Netlify, Vercel, hoặc chính server hiện có của công ty (VD: `https://cdn.vpsglobal.com/chat/`).
+2. Trên website muốn gắn chat, dán đoạn sau ngay trước `</body>`:
+
+```html
+<script src="https://TEN-HOST-CUA-BAN/embed.js"
+        data-backend="https://anteri.onrender.com"
+        async></script>
+```
+
+Thay `https://TEN-HOST-CUA-BAN/embed.js` bằng nơi bạn host ở bước 1, và `data-backend` là URL backend Render.
+
+3. Vậy là xong — nút chat nổi sẽ tự xuất hiện góc phải màn hình, click để mở/đóng, tự resize, không ảnh hưởng gì tới layout website gốc (chạy trong iframe riêng biệt).
+4. Muốn gắn lên nhiều website khác nhau, chỉ cần dán đúng 1 đoạn `<script>` đó ở mỗi nơi.
 
 ## Lưu ý bảo mật
 
