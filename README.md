@@ -1,46 +1,24 @@
-# Community Chat
+# Community Chat Backend v1
+Node.js + Express + WebSocket + Neon PostgreSQL.
 
-Community chat system using:
-- Frontend: HTML/CSS/JavaScript
-- Admin: admin.html
-- Backend: Node.js + Express + WebSocket
-- Database: Neon PostgreSQL
-- Deployment: Render
-
-## Structure
-
-frontend/
-  chat-plugin.html
-  admin.html
-
-backend/
-  package.json
-  .env.example
-  schema.sql
-  README.md
-  src/
-    db.js
-    server.js
-
-## Deploy backend to Render
-
-Build Command:
+## Local
 npm install
-
-Start Command:
+copy .env.example to .env and set DATABASE_URL.
+Run schema.sql in Neon SQL Editor.
 npm start
 
-Environment Variables:
-DATABASE_URL=your Neon PostgreSQL connection string
-CLIENT_ORIGIN=https://your-frontend-domain.com
+## Render
+Create Web Service from this repo.
+Build: `npm install`
+Start: `npm start`
+Environment:
+`DATABASE_URL` = Neon pooled connection string
+`CLIENT_ORIGIN` = your frontend URL
 
-The backend exposes:
-GET /health
-GET /api/rooms
-GET /api/rooms/:roomId/messages
-WebSocket /ws
+Production WebSocket:
+`wss://YOUR-SERVICE.onrender.com/ws`
 
-## Important
-
-Do not commit your real DATABASE_URL, passwords, API keys, or JWT secrets to GitHub.
-Use Render Environment Variables for secrets.
+Frontend sends:
+`{"type":"join","displayName":"Nguyen Vinh","roomId":"00000000-0000-0000-0000-000000000001"}`
+then:
+`{"type":"send_message","content":"Xin chào!"}`
